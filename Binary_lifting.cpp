@@ -5,25 +5,26 @@ const int MAXN = 200005;
 const int LOG = 20;
 
 vector<int> adj[MAXN];
+
 int up[MAXN][LOG];
 int depth[MAXN];
 
 void dfs(int node, int parent)
 {
-    // Store immediate parent
     up[node][0] = parent;
 
-    for (int j = 1; j < LOG; j++)
+    // Binary Lifting Table
+    for(int j = 1; j < LOG; j++)
     {
-        if (up[node][j - 1] != -1)
-            up[node][j] = up[up[node][j - 1]][j - 1];
-        else
+        if(up[node][j-1] == -1)
             up[node][j] = -1;
+        else
+            up[node][j] = up[ up[node][j-1] ][j-1];
     }
 
-    for (int child : adj[node])
+    for(int child : adj[node])
     {
-        if (child == parent)
+        if(child == parent)
             continue;
 
         depth[child] = depth[node] + 1;
@@ -31,16 +32,15 @@ void dfs(int node, int parent)
     }
 }
 
-// Return kth ancestor
 int kthAncestor(int node, int k)
 {
-    for (int j = 0; j < LOG; j++)
+    for(int j = 0; j < LOG; j++)
     {
-        if (k & (1 << j))
+        if(k & (1 << j))
         {
             node = up[node][j];
 
-            if (node == -1)
+            if(node == -1)
                 return -1;
         }
     }
@@ -48,42 +48,30 @@ int kthAncestor(int node, int k)
     return node;
 }
 
-// Lowest Common Ancestor
 int lca(int u, int v)
 {
-    if (depth[u] < depth[v])
+    // Step 1 : Bring both nodes to same depth
+    if(depth[u] < depth[v])
         swap(u, v);
 
-    int diff = depth[u] - depth[v];
+    u = kthAncestor(u, depth[u] - depth[v]);
 
-    for (int j = LOG - 1; j >= 0; j--)
-    {
-        if (diff & (1 << j))
-            u = up[u][j];
-    }
-
-    if (u == v)
+    // If one node is ancestor of another
+    if(u == v)
         return u;
 
-    // Lift both nodes together
-    for (int j = LOG - 1; j >= 0; j--)
+    // Step 2 : Lift both together
+    for(int j = LOG - 1; j >= 0; j--)
     {
-        if (up[u][j] != up[v][j])
+        if(up[u][j] != up[v][j])
         {
             u = up[u][j];
             v = up[v][j];
         }
     }
 
+    // Parent is LCA
     return up[u][0];
-}
-
-// Distance between two nodes
-int distanceNode(int u, int v)
-{
-    int ancestor = lca(u, v);
-
-    return depth[u] + depth[v] - 2 * depth[ancestor];
 }
 
 int main()
@@ -91,8 +79,7 @@ int main()
     int n;
     cin >> n;
 
-    // Input edges
-    for (int i = 0; i < n - 1; i++)
+    for(int i = 0; i < n - 1; i++)
     {
         int u, v;
         cin >> u >> v;
@@ -105,39 +92,16 @@ int main()
 
     depth[1] = 0;
 
-    // Assume root = 1
     dfs(1, -1);
 
     int q;
     cin >> q;
 
-    while (q--)
+    while(q--)
     {
-        int type;
-        cin >> type;
+        int u, v;
+        cin >> u >> v;
 
-        if (type == 1)
-        {
-            int node, k;
-            cin >> node >> k;
-
-            cout << kthAncestor(node, k) << endl;
-        }
-        else if (type == 2)
-        {
-            int u, v;
-            cin >> u >> v;
-
-            cout << lca(u, v) << endl;
-        }
-        else if (type == 3)
-        {
-            int u, v;
-            cin >> u >> v;
-
-            cout << distanceNode(u, v) << endl;
-        }
+        cout << lca(u, v) << "\n";
     }
-
-    return 0;
 }
